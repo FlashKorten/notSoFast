@@ -1,0 +1,60 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+my $program = $0;
+$program =~ s/.*\/(.*)/$1/;
+
+if (@ARGV == 0) {
+    &printUsage;
+    exit 1;
+}
+
+my $file = $ARGV[0];
+unless (-e $file) {
+    print "Cannot open file <$file>\n\n";
+    &printUsage;
+    exit 1;
+}
+
+my $start = "";
+my $duration = "";
+my $loops = "-loop 0";
+my $scaletempo = "";
+my $speed = "";
+
+for (my $i = 1; $i < @ARGV; $i++) {
+  if ($ARGV[$i] eq "-h") {
+    &printUsage;
+    exit 1;
+  } elsif ($ARGV[$i] eq "-s") {
+    $start = "-ss " . $ARGV[$i+1];
+  } elsif ($ARGV[$i] eq "-d") {
+    $duration = "-endpos " . $ARGV[$i+1];
+  } elsif ($ARGV[$i] eq "-l") {
+    $loops = "-loop " . $ARGV[$i+1];
+  } elsif ($ARGV[$i] eq "-t") {
+    $scaletempo = "-af scaletempo"
+  } elsif ($ARGV[$i] eq "-f") {
+    $speed = "-speed " . $ARGV[$i+1];
+  }
+}
+
+`mplayer $scaletempo $start $duration $loops $speed $file 2>&1 /dev/null`;
+
+sub printUsage {
+    print "'$program' is a thin wrapper for mplayer to repeat slowed down sections of songs\n"
+        . "(or anything else mplayer plays). mplayer has to be in execution path.\n\n"
+        . "USAGE: " . $program . " <FILE>\n"
+        . "   appendable parameters:\n"
+        . "     -s seconds [starting offset       | default:         0 ]\n"
+        . "     -d seconds [duration              | default: unlimited ]\n"
+        . "     -l loops   [number of repetitions | default: unlimited ]\n"
+        . "     -t         [use scaletempo filter | default:        no ]\n"
+        . "     -f speed   [use factor for speed  | default:       1.0 ]\n"
+        . "     -h         [print this message    | default:        no ]\n\n"
+        . "Example: $program foobar.ogg -s 93 -d 7 -l 4 -t -f 0.86\n"
+        . "         repeats foobar.ogg from 1:33 to 1:40 for 4 times\n"
+        . "         at 0.86 the normal speed without changing pitch\n";
+}
